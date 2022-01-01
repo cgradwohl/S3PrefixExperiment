@@ -1,4 +1,4 @@
-service: serverless-typescript-starter
+service: s3-prefix-experiment
 
 frameworkVersion: '2 || 3'
 provider:
@@ -11,6 +11,7 @@ package:
 
 plugins:
   - serverless-webpack
+  - serverless-iam-roles-per-function
 
 custom:
   webpack:
@@ -22,7 +23,32 @@ custom:
 functions:
   handler:
     handler: src/handler.default
+    iamRoleStatements:
+      - Effect: "Allow"        
+        Action:
+          - s3:PutObject        
+        Resource: "arn:aws:s3:::*"
     events:
       - http:
           path: /
           method: get
+    environment:
+      S3_BUCKET:
+        Ref: S3Bucket
+
+resources:
+  Resources:
+    S3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        VersioningConfiguration:
+          Status: Enabled
